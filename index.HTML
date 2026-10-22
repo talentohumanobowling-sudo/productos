@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Productos - Tasa BCV</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f1f5f9; }
+    .appsheet-blue { background-color: #1a73e8; }
+    .appsheet-dark { background-color: #0d47a1; }
+    .bcv-header { background: linear-gradient(135deg, #0d47a1, #1565c0); }
+  </style>
+</head>
+<body class="pb-24">
+
+  <!-- Header AppSheet Style -->
+  <header class="appsheet-blue text-white sticky top-0 z-50 shadow-md p-4 flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <i class="fa-solid fa-boxes-stacked text-2xl"></i>
+      <div>
+        <h1 class="font-bold text-lg leading-tight">Catálogo de Productos</h1>
+        <p class="text-xs text-blue-100">Vista AppSheet • Listo para GitHub Pages</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Control de Tasa BCV -->
+  <section class="bcv-header text-white p-4 shadow-inner">
+    <div class="max-w-md mx-auto flex justify-between items-center bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+      <div>
+        <span class="text-xs text-blue-200 block font-semibold">TASA BCV OFICIAL</span>
+        <span class="text-xl font-extrabold" id="bcv-display">Bs. 36.50 / $</span>
+      </div>
+      <button onclick="cambiarTasa()" class="bg-white text-blue-900 px-3 py-1.5 rounded-md font-bold text-xs hover:bg-blue-50 shadow">
+        <i class="fa-solid fa-pen-to-square mr-1"></i> Cambiar
+      </button>
+    </div>
+  </section>
+
+  <!-- Barra de Búsqueda y Filtros -->
+  <section class="p-4 max-w-md mx-auto space-y-3">
+    <div class="relative">
+      <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400"></i>
+      <input type="text" id="search-input" oninput="renderizar()" placeholder="Buscar producto..." class="w-full pl-10 pr-4 py-2 bg-white rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+    </div>
+  </section>
+
+  <!-- Vistas Principales -->
+  <main class="max-w-md mx-auto px-4">
+    <!-- Vista Catálogo (Deck View) -->
+    <div id="view-catalogo" class="space-y-3"></div>
+
+    <!-- Vista Agregar Producto -->
+    <div id="view-nuevo" class="hidden bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
+      <h2 class="font-bold text-gray-800 text-base border-b pb-2"><i class="fa-solid fa-plus-circle text-blue-600 mr-2"></i>Registrar Nuevo Producto</h2>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre del Producto</label>
+        <input type="text" id="new-name" placeholder="Ej: Refresco 2 Litros" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Precio en USD ($)</label>
+        <input type="number" step="0.01" id="new-price" placeholder="0.00" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">URL de Imagen (Opcional)</label>
+        <input type="text" id="new-img" placeholder="https://..." class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <button onclick="guardarProducto()" class="w-full appsheet-blue text-white py-3 rounded-lg font-bold text-sm shadow hover:bg-blue-700">
+        <i class="fa-solid fa-save mr-2"></i>Guardar Producto
+      </button>
+    </div>
+
+    <!-- Vista Carrito / Pedido -->
+    <div id="view-carrito" class="hidden space-y-4">
+      <div id="cart-list" class="space-y-2"></div>
+      <div id="cart-summary" class="bg-white p-4 rounded-xl border space-y-2 shadow-sm">
+        <div class="flex justify-between font-bold text-gray-800">
+          <span>Total USD:</span>
+          <span id="total-usd">$0.00</span>
+        </div>
+        <div class="flex justify-between font-extrabold text-blue-700 text-lg border-t pt-2">
+          <span>Total BS (BCV):</span>
+          <span id="total-bs">Bs. 0.00</span>
+        </div>
+        <button onclick="enviarWhatsApp()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-sm shadow hover:bg-green-700 mt-2 flex items-center justify-center space-x-2">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Enviar Pedido por WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- NAVEGACIÓN INFERIOR (Estilo AppSheet) -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 shadow-lg z-50 max-w-md mx-auto">
+    <button onclick="cambiarVista('catalogo')" id="nav-catalogo" class="flex flex-col items-center text-blue-600 font-medium">
+      <i class="fa-solid fa-border-all text-lg"></i>
+      <span class="text-[10px]">Catálogo</span>
+    </button>
+    <button onclick="cambiarVista('nuevo')" id="nav-nuevo" class="flex flex-col items-center text-gray-400 font-medium">
+      <i class="fa-solid fa-circle-plus text-lg"></i>
+      <span class="text-[10px]">Nuevo</span>
+    </button>
+    <button onclick="cambiarVista('carrito')" id="nav-carrito" class="flex flex-col items-center text-gray-400 font-medium relative">
+      <i class="fa-solid fa-cart-shopping text-lg"></i>
+      <span class="text-[10px]">Carrito</span>
+      <span id="cart-badge" class="absolute -top-1 right-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+    </button>
+  </nav>
+
+  <script>
+    let tasaBCV = 36.50;
+    let productos = JSON.parse(localStorage.getItem('appsheet_prods')) || [
+      { id: 1, nombre: 'Producto Ejemplo', precio: 5.00, img: 'https://via.placeholder.com/150' }
+    ];
+    let carrito = {};
+
+    function guardar() {
+      localStorage.setItem('appsheet_prods', JSON.stringify(productos));
+    }
+
+    function cambiarTasa() {
+      const nueva = prompt("Ingresa la nueva tasa BCV (Bs. por $):", tasaBCV);
+      if (nueva && !isNaN(nueva) && nueva > 0) {
+        tasaBCV = parseFloat(nueva);
+        document.getElementById('bcv-display').innerText = `Bs. ${tasaBCV.toFixed(2)} / $`;
+        renderizar();
+      }
+    }
+
+    function cambiarVista(vista) {
+      ['catalogo', 'nuevo', 'carrito'].forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        document.getElementById(`nav-${v}`).className = 'flex flex-col items-center text-gray-400 font-medium';
+      });
+      document.getElementById(`view-${vista}`).classList.remove('hidden');
+      document.getElementById(`nav-${vista}`).className = 'flex flex-col items-center text-blue-600 font-medium';
+    }
+
+    function renderizar() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const container = document.getElementById('view-catalogo');
+      container.innerHTML = '';
+
+      productos.filter(p => p.nombre.toLowerCase().includes(query)).forEach(p => {
+        const bs = (p.precio * tasaBCV).toFixed(2);
+        container.innerHTML += `
+          <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+            <img src="${p.img}" class="w-16 h-16 object-cover rounded-lg bg-gray-100" onerror="this.src='https://via.placeholder.com/150'">
+            <div class="flex-1">
+              <h3 class="font-bold text-gray-800 text-sm">${p.nombre}</h3>
+              <div class="flex items-baseline space-x-2 mt-0.5">
+                <span class="text-blue-700 font-extrabold text-sm">$${p.precio.toFixed(2)}</span>
+                <span class="text-xs text-gray-500 font-semibold">Bs. ${bs}</span>
+              </div>
+            </div>
+            <button onclick="agregarAlCarrito(${p.id})" class="appsheet-blue text-white p-2.5 rounded-lg shadow hover:bg-blue-700">
+              <i class="fa-solid fa-cart-plus"></i>
+            </button>
+          </div>
+        `;
+      });
+      actualizarCarritoView();
+    }
+
+    function guardarProducto() {
+      const nombre = document.getElementById('new-name').value;
+      const precio = parseFloat(document.getElementById('new-price').value);
+      const img = document.getElementById('new-img').value || 'https://via.placeholder.com/150';
+
+      if (!nombre || isNaN(precio)) {
+        alert("Ingresa un nombre y precio válidos.");
+        return;
+      }
+
+      productos.push({ id: Date.now(), nombre, precio, img });
+      guardar();
+      document.getElementById('new-name').value = '';
+      document.getElementById('new-price').value = '';
+      document.getElementById('new-img').value = '';
+      cambiarVista('catalogo');
+      renderizar();
+    }
+
+    function agregarAlCarrito(id) {
+      carrito[id] = (carrito[id] || 0) + 1;
+      renderizar();
+    }
+
+    function actualizarCarritoView() {
+      const container = document.getElementById('cart-list');
+      container.innerHTML = '';
+      let totalUsd = 0;
+      let totalCount = 0;
+
+      Object.keys(carrito).forEach(id => {
+        const prod = productos.find(p => p.id == id);
+        if (prod) {
+          const cant = carrito[id];
+          const subUsd = prod.precio * cant;
+          totalUsd += subUsd;
+          totalCount += cant;
+          container.innerHTML += `
+            <div class="bg-white p-3 rounded-lg border flex justify-between items-center text-sm">
+              <div>
+                <p class="font-bold text-gray-800">${prod.nombre}</p>
+                <p class="text-xs text-gray-500">$${prod.precio.toFixed(2)} x ${cant}</p>
+              </div>
+              <span class="font-extrabold text-blue-700">$${subUsd.toFixed(2)}</span>
+            </div>
+          `;
+        }
+      });
+
+      const totalBs = totalUsd * tasaBCV;
+      document.getElementById('total-usd').innerText = `$${totalUsd.toFixed(2)}`;
+      document.getElementById('total-bs').innerText = `Bs. ${totalBs.toFixed(2)}`;
+
+      const badge = document.getElementById('cart-badge');
+      if (totalCount > 0) {
+        badge.innerText = totalCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function enviarWhatsApp() {
+      let msg = "¡Hola! Quisiera realizar el siguiente pedido:%0A%0A";
+      let totalUsd = 0;
+
+      Object.keys(carrito).forEach(id => {
+        const prod = productos.find(p => p.id == id);
+        if (prod) {
+          const cant = carrito[id];
+          const subUsd = prod.precio * cant;
+          totalUsd += subUsd;
+          msg += `• ${prod.nombre} x${cant} - $${subUsd.toFixed(2)}%0A`;
+        }
+      });
+
+      const totalBs = totalUsd * tasaBCV;
+      msg += `%0A*Total USD:* $${totalUsd.toFixed(2)}`;
+      msg += `%0A*Total BS (Tasa ${tasaBCV}):* Bs. ${totalBs.toFixed(2)}`;
+
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    }
+
+    renderizar();
+  </script>
+</body>
+</html>
